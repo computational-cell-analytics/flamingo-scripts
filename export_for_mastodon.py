@@ -14,6 +14,7 @@ def export_to_mastodon(input_folder, output_tif, voxel_size, unit, dtype=np.uint
 
     volumes = [tif.imread(f).astype(dtype, copy=False) for f in files]
     data = np.stack(volumes, axis=0)  # (T, Z, Y, X)
+    data = data[:, :, None, :, :]  # (T,Z,C=1,Y,X) -> TZCYX (unambiguous)
 
     vz, vy, vx = voxel_size
     tif.imwrite(
@@ -21,7 +22,12 @@ def export_to_mastodon(input_folder, output_tif, voxel_size, unit, dtype=np.uint
         data,
         imagej=True,
         resolution=(1 / vx, 1 / vy),
-        metadata={"axes": "TZYX", "spacing": vz, "unit": "micron"},
+        metadata={
+            "axes": "TZCYX",
+            "unit": unit,
+            "spacing": vz,  # Z calibration
+            "hyperstack": True,
+        },
     )
 
 
